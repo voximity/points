@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title><%= user.display_name %> - Points</title>
+        
+        <link rel="stylesheet" href="/assets/common.css">
+        <link rel="stylesheet" href="/assets/edit.css">
+        <link rel="stylesheet" href="/assets/resource_settings.css">
+
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+        <script type="text/javascript">
+        function after_load() {
+            let resource_settings = {
+                edit_name: true,
+                add_new: true,
+                new_name: "Unnamed reward",
+                buttons: [],
+                setting_groups: {
+                    alert: {
+                        name: "Alert",
+                        settings: {
+                            tts_enabled: {
+                                name: "TTS enabled",
+                                type: "switch",
+                                default: false
+                            },
+                            show_text: {
+                                name: "Show text",
+                                type: "switch",
+                                default: false
+                            },
+                            show_redeemer: {
+                                name: "Show redeeming user",
+                                type: "switch",
+                                default: false
+                            },
+                            show_reward_name: {
+                                name: "Show reward name",
+                                type: "switch",
+                                default: false
+                            },
+                            sound: {
+                                name: "Alert sound URL",
+                                type: "text",
+                                default: ""
+                            },
+                            color: {
+                                name: "Color",
+                                type: "color",
+                                colors: [
+                                    0x3dbd9e, 0x4bcd75, 0x4398da, 0x9758b4, 0xe1145f, 0xeec41e, 0xe07d20, 0xe04937, 0x96a5a6,
+                                    0x28806b, 0x328b4f, 0x2b6693, 0x6e3589, 0xa70d54, 0xbe7b10, 0xa34100, 0x942b1f, 0x979c9f
+                                ],
+                                default: 0x3dbd9e
+                            }
+                        }
+                    }
+                }
+            };
+
+            var deletions = [];
+
+            class ColorSelector {
+                constructor(colors, color) {
+                    this.index = 0;
+                    for (let color_index in colors) {
+                        if (colors[color_index] == color) {
+                            this.index = color_index;
+                            break;
+                        }
+                    }
+                    this.colors = colors;
+                    this.color_elements = [];
+                    this.on_change_events = [];
+
+                    this.element = document.createElement("div");
+                    this.element.className = "color-picker-container";
+
+                    for (let color_index in colors) {
+                        let color_element = document.createElement("div");
+                        color_element.className = "color-picker-color";
+                        color_element.style.background = "#" + this.decimal_to_hex(colors[color_index], 6);
+                        
+                        this.color_elements.push(color_element);
+                        this.element.appendChild(color_element);
+
+                        if (this.index == color_index)
+                            color_element.className += " color-picker-selected";
+
+                        color_element.addEventListener("click", () => {
+                            this.select(color_index);
+                        });
+                    }
+                }
+
+                select = (index) => {
+                    this.index = index;
+                    for (let color_index in this.colors) {
+                        let element = this.color_elements[color_index];
+                        element.className = "color-picker-color";
+
+                        if (color_index == index)
+                            element.className += " color-picker-selected";
+                    }
+                    this.invoke_on_change();
+                }
+
+                invoke_on_change = () => {
+                    this.on_change_events.forEach(f => f());
+                }
+
+                on_change = (f) => {
+                    this.on_change_events.push(f);
+                }
+
+                get_color = () => {
+                    return this.colors[this.index];
+                }
+
+                // stolen from stackoverflow lul
+                decimal_to_hex = (d, padding) => {
+                    var hex = Number(d).toString(16);
+                    padding = typeof (padding) === "undefined" || padding === null ? padding = 2 : padding;
+
+                    while (hex.length < padding) {
+                        hex = "0" + hex;
+                    }
+
+                    return hex;
+                }
+            }
+
+            class Resource {
+                constructor() {
+                    this.name = resource_settings.new_name;
+                    this.id = -1;
+                    this.settings = {};
+                    this.modified = true;
+
+                    for (let group in resource_settings.setting_groups) {
+                        this.settings[group] = {};
+                        for (let setting in resource_settings.setting_groups[group].settings) {
+                            this.settings[group][setting] = resource_settings.setting_groups[group].settings[setting].default;
+                        }
+                    }
+                }
+
+                render_in_pane = () => {
+                    resource_pane.innerHTML = "";
+
+                    let header_container = document.createElement("div");
+                    header_container.className = "header-container";
+
+                    let header = document.createElement("h1");
+                    header.innerHTML = this.name;
+                    if (resource_settings.edit_name) {
+                        header.innerHTML += " ";
+                        let edit_button = document.createElement("i");
+                        edit_button.className = "material-icons";
+                        edit_button.innerHTML = "create";
+                        header.appendChild(edit_button);
+
+                        header_container.appendChild(header);
+
+                        edit_button.addEventListener("click", () => {
+                            let header_textbox = document.createElement("input");
+                            header_textbox.type = "text";
+                            header_textbox.value = this.name;
+                            header_textbox.className = "resource-name-textbox";
+                            header_container.insertBefore(header_textbox, header);
+                            header_container.removeChild(header);
+
+                            header_textbox.addEventListener("change", () => {
+                                this.name = header_textbox.value;
+                                this.modified = true;
+                                this.update_in_list();
+                            });
+                        });
+
+                        let delete_button = document.createElement("i");
+                        delete_button.className = "material-icons delete-button";
+                        delete_button.innerHTML = "delete";
+                        header_container.appendChild(delete_button);
+
+                        delete_button.addEventListener("click", () => {
+                            resource_pane.innerHTML = "";
+                            resources.splice(resources.indexOf(this), 1);
+                            resource_list.removeChild(this.list_item);
+                            if (this.id != -1)
+                                deletions.push(this.id);
+                        });
+                    } else {
+                        header_container.appendChild(header);
+                    }
+
+                    resource_pane.appendChild(header_container);
+
+                    for (let group_id in this.settings) {
+                        let group_metadata = resource_settings.setting_groups[group_id];
+
+                        let group_element = document.createElement("div");
+                        group_element.className = "resource-setting-group";
+
+                        let group_header = document.createElement("h2");
+                        group_header.innerHTML = group_metadata.name;
+                        group_element.appendChild(group_header);
+
+                        for (let setting_id in this.settings[group_id]) {
+                            let setting_metadata = group_metadata.settings[setting_id];
+
+                            let setting_element = document.createElement("div");
+                            setting_element.className = "resource-setting";
+
+                            let setting_name_element = document.createElement("h3");
+                            setting_name_element.innerHTML = setting_metadata.name;
+
+                            let setting_content;
+                            let channel_list_selector;
+                            let color_selector;
+
+                            if (setting_metadata.type == "number") {
+                                setting_content = document.createElement("input");
+                                setting_content.type = "number";
+                                setting_content.value = this.settings[group_id][setting_id];
+                                setting_content.placeholder = setting_metadata.placeholder || "";
+
+                                if (this.settings[group_id][setting_id] == setting_metadata.empty_if) {
+                                    setting_content.value = "";
+                                }
+                            } else if (setting_metadata.type == "text") {
+                                setting_content = document.createElement("input");
+                                setting_content.type = "text";
+                                setting_content.value = this.settings[group_id][setting_id];
+                            } else if (setting_metadata.type == "dropdown") {
+                                setting_content = document.createElement("select");
+                                for (let i = 0; i < setting_metadata.choices.length; i++) {
+                                    let option = document.createElement("option");
+                                    option.value = i;
+                                    option.innerHTML = setting_metadata.choices[i];
+                                    option.checked = this.settings[group_id][setting_id] == i;
+                                    setting_content.appendChild(option);
+                                }
+                                setting_content.selectedIndex = this.settings[group_id][setting_id];
+                            } else if (setting_metadata.type == "color") {
+                                color_selector = new ColorSelector(setting_metadata.colors, this.settings[group_id][setting_id]);
+                                setting_content = color_selector.element;
+                            } else if (setting_metadata.type == "switch") {
+                                let label = document.createElement("label");
+                                label.className = "switch";
+                                let input = document.createElement("input");
+                                input.type = "checkbox";
+                                input.checked = this.settings[group_id][setting_id];
+                                let span = document.createElement("span");
+                                span.className = "slider";
+                                label.appendChild(input);
+                                label.appendChild(span);
+
+                                setting_content = label;
+                            }
+
+                            setting_content.addEventListener("change", (event) => {
+                                this.set_modified();
+                                if (setting_metadata.type == "number") {
+                                    if (event.target.value == "") {
+                                        this.settings[group_id][setting_id] = setting_metadata.empty_if || setting_metadata.default;
+                                    } else {
+                                        this.settings[group_id][setting_id] = parseInt(event.target.value);
+                                    }
+                                } else if (setting_metadata.type == "dropdown") {
+                                    this.settings[group_id][setting_id] = parseInt(setting_content.options[setting_content.selectedIndex].value);
+                                } else if (setting_metadata.type == "text") {
+                                    this.settings[group_id][setting_id] = event.target.value;
+                                } else if (setting_metadata.type == "switch") {
+                                    this.settings[group_id][setting_id] = event.target.checked;
+                                }
+                            });
+
+                            if (setting_metadata.type == "color") {
+                                color_selector.on_change(() => {
+                                    this.set_modified();
+                                    this.settings[group_id][setting_id] = color_selector.get_color();
+                                })
+                            }
+
+                            setting_element.appendChild(setting_name_element);
+                            setting_element.appendChild(setting_content);
+                            group_element.appendChild(setting_element);
+                        }
+
+                        resource_pane.appendChild(group_element);
+                    }
+
+                    if (resource_settings.buttons && resource_settings.buttons.length > 0) {
+                        let button_container = document.createElement("div");
+                        button_container.className = "resource-settings-pane-buttons";
+                        for (let button_index in resource_settings.buttons) {
+                            let metadata = resource_settings.buttons[button_index]
+                            let element = document.createElement("button");
+                            element.innerHTML = metadata.name;
+                            element.className = "button " + (metadata.class || "");
+                            button_container.appendChild(element);
+                            element.addEventListener("click", () => {
+                                metadata.on_click(this);
+                            });
+                        }
+
+                        resource_pane.appendChild(button_container);
+                    }
+                }
+
+                set_modified = () => {
+                    if (!this.modified) {
+                        this.modified = true;
+                        this.update_in_list();
+                    }
+                }
+
+                render_in_list = () => {
+                    this.list_item = document.createElement("div");
+                    this.list_item.className = "resource";
+                    this.update_in_list();
+
+                    this.list_item.addEventListener("click", () => {
+                        Array.from(resource_list.children).forEach(child => child.classList.remove("resource-selected"));
+                        this.list_item.classList.add("resource-selected");
+                        this.render_in_pane();
+                    });
+
+                    return this.list_item;
+                }
+
+                update_in_list = () => {
+                    this.list_item.innerHTML = this.name;
+                    if (this.modified) {
+                        this.list_item.innerHTML += "<span class=\"resource-unsaved\">Unsaved</span>";
+                    }
+                }
+            }
+
+            let resources = [];
+            let resource_list = document.getElementById("resource-settings-list");
+            let resource_add = document.getElementById("resource-add");
+            let resource_pane = document.getElementById("resource-settings-pane");
+            let resource_save = document.getElementById("resource-save");
+
+            function init_resources() {
+                
+            }
+
+            function add_resource(dontView) {
+                let resource = new Resource();
+                resources.push(resource);
+
+                let resource_in_list = resource.render_in_list();
+
+                if (resource_settings.add_new) {
+                    resource_list.insertBefore(resource_in_list, resource_add);
+                } else {
+                    resource_list.appendChild(resource_in_list);
+                }
+
+                if (dontView !== true) {
+                    Array.from(resource_list.children).forEach(child => child.classList.remove("resource-selected"));
+                    resource_in_list.classList.add("resource-selected");
+
+                    resource.render_in_pane();
+                }
+
+                return resource;
+            }
+
+            function save_resources() {
+                
+            }
+
+            function showError(message, dontShowPrefix) {
+
+            }
+
+            init_resources();
+
+            resource_add.addEventListener("click", add_resource);
+            resource_save.addEventListener("click", save_resources);
+        }
+        </script>
+    </head>
+    <body onload="after_load()">
+        <%= render "src/views/header.ecr" %>
+        <div class="edit-content">
+            <h1>Edit your channel points</h1>
+            <p>
+                From this pane, you can edit your channel points rewards. Due to a limitation of Twitch's API (currently),
+                you must enter an existing channel points reward from your stream exactly. From there, you can configure custom
+                functionality.
+            </p>
+            <hr>
+            <div id="resource-settings-container">
+                <div id="resource-settings-list">
+                    <div class="resource" id="resource-add"><i class="material-icons">add_circle</i> Add reward...</div>
+                    <div id="save-button-container">
+                        <button id="resource-save" class="button">Save</button>
+                    </div>
+                </div>
+                <div id="resource-settings-pane">
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

@@ -1,0 +1,20 @@
+name: points
+version: 0.1.0
+
+authors:
+  - voximity <zander@zanderf.net>
+
+targets:
+  points:
+    main: src/points.cr
+
+dependencies:
+  kemal:
+    github: kemalcr/kemal
+  kemal-session:
+    git: https://github.com/marzhaev/kemal-session.git
+    branch: master
+
+crystal: 0.34.0
+
+license: MIT

@@ -1,0 +1,15 @@
+<div id="header-container">
+    <div id="header">
+        <div class="header-section">
+            <h1><a href="/">Points</a></h1>
+        </div>
+        <div class="header-section">
+            <%- session_user = session.user -%>
+            <%- unless session_user.nil? -%>
+                <a href="/edit"><%= session_user.display_name %></a>
+            <%- else -%>
+                <a href="/login">Login</a>
+            <%- end -%>
+        </div>
+    </div>
+</div>

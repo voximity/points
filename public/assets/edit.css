@@ -1,0 +1,5 @@
+.edit-content {
+    width: calc(100% - 48px);
+    max-width: 1000px;
+    margin: 0 auto;
+}

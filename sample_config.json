@@ -1,0 +1,9 @@
+{
+    "twitch_application_id": "",
+    "twitch_application_secret": "",
+    "twitch_application_redirect": "https://.../auth",
+
+    "session_secret": "",
+    "port": 80,
+    "scope": ["user:read:email", "channel:read:redemptions"]
+}

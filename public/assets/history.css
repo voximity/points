@@ -1,0 +1,25 @@
+#history-list {
+    display: flex;
+    flex-direction: column-reverse;
+    width: calc(100% - 48px);
+    margin: 0 auto;
+}
+
+.history-item {
+    padding: 8px 24px;
+    display: flex;
+    align-items: center;
+}
+
+.history-item:nth-child(odd) {
+    background: #e4e4e4;
+}
+
+.history-item-time {
+    flex: 0 1 200px;
+    color: #888;
+}
+
+.history-item-content {
+    flex: 1 1 auto;
+}

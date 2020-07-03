@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-*">
+        <title>Points History - <%= user.display_name %> - Points</title>
+
+        <link rel="stylesheet" href="/assets/common.css">
+        <link rel="stylesheet" href="/assets/history.css">
+
+        <script type="text/javascript">
+            let socket;
+            let heartbeat_interval;
+            let access_token = "<%= session.auth.not_nil!.access_token %>";
+            let channel_id = "<%= user.id %>";
+            let should_reconnect = false;
+            let max_history_list_length = 200;
+            let nonce;
+            let history_list_element;
+            let history_list = [];
+
+            class HistoryListItem {
+                constructor(inner) {
+                    this.innerHTML = inner;
+                    this.timestamp = Date.now();
+                    this.element = document.createElement("div");
+                    this.element.className = "history-item";
+
+                    this.time_element = document.createElement("span");
+                    this.time_element.className = "history-item-time";
+                    
+                    this.content_element = document.createElement("div");
+                    this.content_element.className = "history-item-content";
+
+                    this.element.appendChild(this.time_element);
+                    this.element.appendChild(this.content_element);
+
+                    this.update();
+                }
+
+                update = () => {
+                    let elapsed_time = Date.now() - this.timestamp;
+                    let seconds = elapsed_time / 1000;
+                    let time_value = 0;
+                    let time_type = "second";
+
+                    if (seconds < 60) {
+                        time_type = "second";
+                        time_value = Math.floor(seconds);
+                    } else if (seconds < 60 * 60) {
+                        time_type = "minute";
+                        time_value = Math.floor(seconds / 60);
+                    } else if (seconds < 60 * 60 * 24) {
+                        time_type = "hour";
+                        time_value = Math.floor(seconds / 60 / 60);
+                    } else {
+                        time_type = "day";
+                        time_value = Math.floor(seconds / 60 / 60 / 24);
+                    }
+
+                    this.time_element.innerHTML = time_value + " " + time_type + (time_value != 1 ? "s" : "") + " ago";
+                    this.content_element.innerHTML = this.innerHTML;
+                }
+            }
+
+            function add_to_history(inner) {
+                let item = new HistoryListItem(inner);
+                history_list.push(item);
+                if (history_list.length > max_history_list_length) {
+                    let child = history_list_element.children[0];
+                    history_list.splice(0, 1);
+                    history_list_element.removeChild(child);
+                }
+                history_list_element.appendChild(item.element);
+                return item;
+            }
+
+            let history_update_interval = setInterval(() => {
+                history_list.forEach(item => {
+                    item.update();
+                });
+            }, 1000);
+
+            function init() {
+                history_list_element = document.getElementById("history-list");
+                socket = new WebSocket("wss://pubsub-edge.twitch.tv/");
+
+                socket.onopen = function(event) {
+                    should_reconnect = false;
+                    nonce = Math.round((new Date()).getTime()).toString();
+                    heartbeat_interval = setInterval((event) => {
+                        socket.send(JSON.stringify({"type": "PING"}))
+                    }, 5 * 60 * 1000);
+                    socket.send(JSON.stringify({
+                        "type": "LISTEN",
+                        "nonce": nonce,
+                        "data": {
+                            "topics": ["channel-points-channel-v1." + channel_id],
+                            "auth_token": access_token
+                        }
+                    }));
+                }
+
+                socket.onmessage = function(event) {
+                    let data = JSON.parse(event.data);
+                    if (data.type == "RECONNECT") {
+                        should_reconnect = true;
+                        socket.close();
+                    } else {
+                        console.log(data);
+                    }
+                    add_to_history("New message: " + event.data);
+                }
+
+                socket.onclose = function(event) {
+                    clearInterval(heartbeat_interval);
+                    if (should_reconnect)
+                        init();
+                }
+            }
+        </script>
+    </head>
+    <body onload="init()">
+        <div id="history-list"></div>
+    </body>
+</html>

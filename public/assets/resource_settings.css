@@ -1,0 +1,242 @@
+hr {
+    border: 1px solid #ddd;
+    margin: 24px 0;
+}
+
+#resource-settings-container {
+    display: flex;
+    margin-top: 24px;
+}
+
+#resource-settings-list {
+    flex: 0 0 250px;
+    margin-right: 24px;
+    display: flex;
+    flex-direction: column;
+}
+
+#resource-settings-pane {
+    flex: 0 1 700px;
+    padding-bottom: 40px;
+}
+
+.resource-settings-pane-buttons {
+    display: flex;
+}
+
+.resource-settings-pane-buttons > button {
+    margin: 0 8px;
+    flex: 0 1 auto;
+    padding: 12px 18px;
+    cursor: pointer;
+}
+
+.resource {
+    cursor: pointer;
+    margin: 2px 0;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 16px;
+    color: #555;
+    display: flex;
+    align-items: center;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.resource-no-left-border-radius {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.resource-selected {
+    background: #ddd;
+    color: #333;
+}
+
+#resource-settings-pane h1 {
+    margin: 0 0 24px 0;
+    font-size: 28px;
+    color: #222;
+    display: flex;
+    align-items: center;
+}
+
+#resource-settings-pane .header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#resource-settings-pane h1 i {
+    cursor: pointer;
+    margin-left: 18px;
+    color: #888;
+}
+
+#resource-add {
+    justify-content: initial;
+}
+
+#resource-add i {
+    margin-right: 8px;
+}
+
+.resource-setting-group {
+    margin: 32px 0;
+}
+
+.resource-setting-group h2 {
+    font-size: 14px;
+    text-transform: uppercase;
+    color: #aaa;
+    margin: 0 0 8px 0;
+}
+
+.resource-setting {
+    display: flex;
+    justify-content: space-between;
+    margin: 6px 0;
+    align-items: flex-start;
+}
+
+.resource-setting h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #333;
+    font-weight: 500;
+}
+
+.resource-name-textbox {
+    font-size: 28px !important;
+    font-weight: 600;
+    padding: 8px 12px;
+}
+
+.resource-unsaved {
+    font-size: 12px;
+    text-transform: uppercase;
+    color: #999;
+}
+
+.delete-button {
+    color: #a00;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.channel-list-selector {
+    border-radius: 12px;
+    padding: 4px;
+}
+
+.channel-list-selector-add {
+    width: 20px;
+    height: 20px;
+}
+
+#save-button-container {
+    margin-top: 28px;
+    display: flex;
+    /*justify-content: center;*/
+}
+
+input[type=text] {
+    width: 300px;
+}
+
+.color-picker-container {
+    display: flex;
+    flex-wrap: wrap;
+    max-width: calc(20px * 9 + 3px * 2 * 9);
+}
+
+.color-picker-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    margin: 3px;
+    cursor: pointer;
+}
+
+.color-picker-selected {
+    box-sizing: border-box;
+    border: 3px solid #444;
+}
+
+.radio-collection {
+    max-width: 300px;
+}
+
+.radio-pair {
+    align-items: flex-start;
+}
+
+button {
+    border: none;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 26px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+    transition: 0.2s ease;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 4px;
+    bottom: 4px;
+    border-radius: 26px;
+    background-color: #bbb;
+    transition: 0.2s ease;
+}
+
+input:checked + .slider {
+    border: 1px solid #9146FF;
+}
+
+input:checked + .slider:before {
+    transform: translateX(24px);
+    background-color: #9146FF;
+}
+
+.button {
+    padding: 8px 12px;
+    text-decoration: none;
+    text-transform: uppercase;
+    border: 2px solid #9146FF;
+    border-radius: 6px;
+    font-weight: 600;
+    color: #9146FF;
+    transition: 0.1s ease;
+    font-size: 14px;
+}
+
+.button:hover {
+    background: #9146FF;
+    color: #F0F0FF;
+}
